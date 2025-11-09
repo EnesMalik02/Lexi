@@ -40,11 +40,11 @@ export default function Auth() {
 
     try {
       await resetPassword(email);
-      setSuccess('Şifre sıfırlama bağlantısı email adresinize gönderildi. Lütfen gelen kutunuzu kontrol edin.');
+      setSuccess('Şifre sıfırlama bağlantısı email adresinize gönderildi. Lütfen gelen kutunuzu ve spam klasörünüzü kontrol edin.');
       setTimeout(() => {
         setShowForgotPassword(false);
         setSuccess('');
-      }, 3000);
+      }, 10000);
     } catch (err: any) {
       setError(err.message || 'Şifre sıfırlama emaili gönderilemedi');
     } finally {
