@@ -75,28 +75,6 @@ export default function Dashboard() {
     }
   }
 
-  async function handleDeleteDeck(deckId: string) {
-    if (!currentUser) return;
-    if (!confirm('Bu deck\'i silmek istediğinize emin misiniz? Tüm kelimeler de silinecektir.')) return;
-
-    try {
-      await deleteDoc(doc(db, `users/${currentUser.uid}/decks/${deckId}`));
-
-      const wordsRef = collection(db, `users/${currentUser.uid}/words`);
-      const wordsQuery = query(wordsRef, where('deckId', '==', deckId));
-      const wordsSnapshot = await getDocs(wordsQuery);
-      const deletePromises = wordsSnapshot.docs.map((wordDoc) =>
-        deleteDoc(doc(db, `users/${currentUser.uid}/words/${wordDoc.id}`))
-      );
-      await Promise.all(deletePromises);
-
-      loadDecks();
-    } catch (error) {
-      console.error('Deck silme hatası:', error);
-      alert('Deck silinirken bir hata oluştu');
-    }
-  }
-
   function handleLogout() {
     logout();
     router.push('/');
@@ -247,13 +225,6 @@ export default function Dashboard() {
                         Kelimeleri görüntülemek için tıklayın →
                       </p>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteDeck(deck.deckId); }}
-                      className="text-xs px-3 py-2 rounded-md"
-                      style={{ background: 'var(--btn-secondary-bg)', color: 'var(--btn-secondary-text)' }}
-                    >
-                      Sil
-                    </button>
                   </div>
                 </div>
               ))}
