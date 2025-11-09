@@ -9,6 +9,9 @@ import { db } from '@/lib/firebase';
 import { Word, Deck } from '@/types';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, PlayIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
+import { generateSentenceForWord } from "@/lib/GeminiService";
+import { SparklesIcon } from "@heroicons/react/24/outline";
+
 
 // === ARAMA: importlar ===
 import QuickSearch from '@/components/QuickSearch/QuickSearch';
@@ -39,6 +42,10 @@ export default function DeckDetail() {
   const [filteredWordIds, setFilteredWordIds] = useState<string[] | null>(null);
   const [searchQ, setSearchQ] = useState('');
   const [highlightId, setHighlightId] = useState<string | null>(null);
+
+  const [genLoadingAdd, setGenLoadingAdd] = useState(false);
+const [genLoadingEdit, setGenLoadingEdit] = useState(false);
+
 
   useEffect(() => {
     if (currentUser && deckId) {
@@ -364,23 +371,58 @@ export default function DeckDetail() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                    Örnek Cümle (İsteğe Bağlı)
-                  </label>
-                  <textarea
-                    value={newWord.exampleSentence}
-                    onChange={(e) => setNewWord({ ...newWord, exampleSentence: e.target.value })}
-                    placeholder="Örn: We found the café by pure serendipity."
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-lg outline-none resize-none transition-all"
-                    style={{
-                      backgroundColor: 'var(--bg-card)',
-                      border: '1px solid var(--border-light)',
-                      color: 'var(--text-primary)',
-                    }}
-                  />
-                </div>
+              <div>
+  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+    Örnek Cümle (İsteğe Bağlı)
+  </label>
+
+  <div className="relative">
+    <textarea
+      value={newWord.exampleSentence}
+      onChange={(e) => setNewWord({ ...newWord, exampleSentence: e.target.value })}
+      placeholder="Örn: We found the café by pure serendipity."
+      rows={3}
+      className="w-full px-4 py-3 pr-28 rounded-lg outline-none resize-none transition-all"
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-light)',
+        color: 'var(--text-primary)',
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={async () => {
+        if (!newWord.original.trim()) return;
+        try {
+          setGenLoadingAdd(true);
+          const s = await generateSentenceForWord(newWord.original.trim());
+          setNewWord((prev) => ({ ...prev, exampleSentence: s }));
+        } catch (e) {
+          console.error(e);
+          alert("Cümle oluşturulamadı.");
+        } finally {
+          setGenLoadingAdd(false);
+        }
+      }}
+      disabled={genLoadingAdd || !newWord.original.trim()}
+      className="absolute right-2 bottom-2 px-3 py-2 rounded-md text-sm font-medium transition-all"
+      style={{
+        backgroundColor: 'var(--btn-primary-bg)',
+        color: 'var(--btn-primary-text)',
+        opacity: genLoadingAdd || !newWord.original.trim() ? 0.6 : 1,
+      }}
+      title="Kelimeyle örnek cümle üret"
+    >
+      {genLoadingAdd ? "Üretiliyor…" : (
+        <span className="inline-flex items-center gap-1">
+          <SparklesIcon className="w-4 h-4" /> Cümle Üret
+        </span>
+      )}
+    </button>
+  </div>
+</div>
+
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
@@ -456,23 +498,58 @@ export default function DeckDetail() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                    Örnek Cümle (İsteğe Bağlı)
-                  </label>
-                  <textarea
-                    value={editWord.exampleSentence}
-                    onChange={(e) => setEditWord({ ...editWord, exampleSentence: e.target.value })}
-                    placeholder="Örn: We found the café by pure serendipity."
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-lg outline-none resize-none transition-all"
-                    style={{
-                      backgroundColor: 'var(--bg-card)',
-                      border: '1px solid var(--border-light)',
-                      color: 'var(--text-primary)',
-                    }}
-                  />
-                </div>
+               <div>
+  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+    Örnek Cümle (İsteğe Bağlı)
+  </label>
+
+  <div className="relative">
+    <textarea
+      value={editWord.exampleSentence}
+      onChange={(e) => setEditWord({ ...editWord, exampleSentence: e.target.value })}
+      placeholder="Örn: We found the café by pure serendipity."
+      rows={3}
+      className="w-full px-4 py-3 pr-28 rounded-lg outline-none resize-none transition-all"
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-light)',
+        color: 'var(--text-primary)',
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={async () => {
+        if (!editWord.original.trim()) return;
+        try {
+          setGenLoadingEdit(true);
+          const s = await generateSentenceForWord(editWord.original.trim());
+          setEditWord((prev) => ({ ...prev, exampleSentence: s }));
+        } catch (e) {
+          console.error(e);
+          alert("Cümle oluşturulamadı.");
+        } finally {
+          setGenLoadingEdit(false);
+        }
+      }}
+      disabled={genLoadingEdit || !editWord.original.trim()}
+      className="absolute right-2 bottom-2 px-3 py-2 rounded-md text-sm font-medium transition-all"
+      style={{
+        backgroundColor: 'var(--btn-primary-bg)',
+        color: 'var(--btn-primary-text)',
+        opacity: genLoadingEdit || !editWord.original.trim() ? 0.6 : 1,
+      }}
+      title="Kelimeyle örnek cümle üret"
+    >
+      {genLoadingEdit ? "Üretiliyor…" : (
+        <span className="inline-flex items-center gap-1">
+          <SparklesIcon className="w-4 h-4" /> Cümle Üret
+        </span>
+      )}
+    </button>
+  </div>
+</div>
+
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
