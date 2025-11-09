@@ -7,6 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -16,6 +18,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -56,6 +59,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
+  async function loginWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
+    
+    try {
+    // Kullanıcı bilgilerini Firestore'a kaydet veya güncelle
+    await setDoc(
+      doc(db, 'users', user.uid),
+      {
+        email: user.email,
+        username: user.displayName,
+        photoURL: user.photoURL,
+        lastLogin: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    } catch (error) {
+      console.error('Google ile giriş yapılamadı:', error);
+      throw error;
+    }
+  }
+
   function logout() {
     return signOut(auth);
   }
@@ -74,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     login,
     signup,
+    loginWithGoogle,
     logout,
   };
 
