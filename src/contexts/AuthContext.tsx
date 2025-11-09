@@ -10,6 +10,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   fetchSignInMethodsForEmail,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -20,6 +21,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -98,6 +100,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loginWithGoogle() {
     const provider = new GoogleAuthProvider();
+    // Hesap seçimini her zaman göster (önceki seçimleri hatırlamaz)
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
     
     try {
       const userCredential = await signInWithPopup(auth, provider);
@@ -111,12 +117,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Kullanıcının email'i için mevcut giriş metodlarını kontrol et
       const signInMethods = await fetchSignInMethodsForEmail(auth, user.email);
       
-      // Eğer 'password' methodu varsa ve kullanıcı Google ile giriş yapmaya çalışıyorsa
-      if (signInMethods.includes('password') && !signInMethods.includes('google.com')) {
+      // ÖNEMLI: Eğer hesap SADECE password ile kayıtlıysa ve Google ile değilse
+      // Bu durumda Firebase hesapları birleştirmiş olabilir, bunu engellemeliyiz
+      if (signInMethods.includes('password') && signInMethods.length === 1) {
         // Kullanıcıyı logout et
         await signOut(auth);
-        throw new Error('Bu email adresi zaten kayıtlı. Lütfen email ve şifreniz ile giriş yapın.');
+        throw new Error('Bu email adresi zaten email/şifre ile kayıtlı. Lütfen email ve şifreniz ile giriş yapın veya farklı bir Google hesabı kullanın.');
       }
+      
+      // Hem password hem Google varsa, hesaplar birleştirilmiş demektir
+      // Sadece Google varsa veya hiçbiri yoksa, devam et
       
       // Kullanıcı bilgilerini Firestore'a kaydet veya güncelle
       await setDoc(
@@ -136,6 +146,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Giriş penceresi kapatıldı');
       } else if (error.code === 'auth/cancelled-popup-request') {
         throw new Error('Giriş işlemi iptal edildi');
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('Bu email adresi başka bir giriş yöntemi ile kayıtlı. Lütfen o yöntemi kullanın.');
+      }
+      throw error;
+    }
+  }
+
+  async function resetPassword(email: string) {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('Bu email adresi ile kayıtlı kullanıcı bulunamadı.');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Geçersiz email adresi.');
       }
       throw error;
     }
@@ -160,6 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     signup,
     loginWithGoogle,
+    resetPassword,
     logout,
   };
 
