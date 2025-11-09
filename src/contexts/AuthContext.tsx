@@ -7,10 +7,9 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
-  fetchSignInMethodsForEmail,
-  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
@@ -20,7 +19,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -37,14 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signup(email: string, password: string) {
     try {
-      // Önce bu email'in başka bir metodla kayıtlı olup olmadığını kontrol et
-      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      
-      // Eğer Google ile kayıtlıysa
-      if (signInMethods.includes('google.com')) {
-        throw new Error('Bu email adresi Google hesabı ile kayıtlı. Lütfen "Google ile Devam Et" butonunu kullanın.');
-      }
-      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
@@ -72,14 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Last login bilgisini güncelle ve email'i de güncel tut
+      // Last login bilgisini güncelle
       await setDoc(
         doc(db, 'users', user.uid),
         {
           email: email,
           lastLogin: serverTimestamp(),
         },
-        { merge: true } // Mevcut verileri koru, sadece belirtilen alanları güncelle
+        { merge: true }
       );
     } catch (error: any) {
       // Firebase hatalarını Türkçe'ye çevir
@@ -98,56 +89,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function loginWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    // Hesap seçimini her zaman göster (önceki seçimleri hatırlamaz)
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
-    
+  async function signInWithGoogle() {
     try {
+      const provider = new GoogleAuthProvider();
+      // Türkçe dil desteği için
+      provider.setCustomParameters({
+        prompt: 'select_account',
+        display: 'popup'
+      });
+      
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
-      
-      if (!user.email) {
-        await signOut(auth);
-        throw new Error('Google hesabınızdan email alınamadı');
-      }
-      
-      // Kullanıcının email'i için mevcut giriş metodlarını kontrol et
-      const signInMethods = await fetchSignInMethodsForEmail(auth, user.email);
-      
-      // ÖNEMLI: Eğer hesap SADECE password ile kayıtlıysa ve Google ile değilse
-      // Bu durumda Firebase hesapları birleştirmiş olabilir, bunu engellemeliyiz
-      if (signInMethods.includes('password') && signInMethods.length === 1) {
-        // Kullanıcıyı logout et
-        await signOut(auth);
-        throw new Error('Bu email adresi zaten email/şifre ile kayıtlı. Lütfen email ve şifreniz ile giriş yapın veya farklı bir Google hesabı kullanın.');
-      }
-      
-      // Hem password hem Google varsa, hesaplar birleştirilmiş demektir
-      // Sadece Google varsa veya hiçbiri yoksa, devam et
       
       // Kullanıcı bilgilerini Firestore'a kaydet veya güncelle
       await setDoc(
         doc(db, 'users', user.uid),
         {
           email: user.email,
-          username: user.displayName,
+          displayName: user.displayName,
           photoURL: user.photoURL,
           lastLogin: serverTimestamp(),
-          createdAt: serverTimestamp(),
+          provider: 'google',
         },
         { merge: true }
       );
     } catch (error: any) {
       // Firebase hatalarını Türkçe'ye çevir
       if (error.code === 'auth/popup-closed-by-user') {
-        throw new Error('Giriş penceresi kapatıldı');
+        throw new Error('Giriş penceresi kapatıldı.');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup engellendi. Lütfen tarayıcınızın popup ayarlarını kontrol edin.');
       } else if (error.code === 'auth/cancelled-popup-request') {
-        throw new Error('Giriş işlemi iptal edildi');
+        throw new Error('Giriş işlemi iptal edildi.');
       } else if (error.code === 'auth/account-exists-with-different-credential') {
-        throw new Error('Bu email adresi başka bir giriş yöntemi ile kayıtlı. Lütfen o yöntemi kullanın.');
+        throw new Error('Bu email adresi farklı bir giriş yöntemi ile zaten kayıtlı.');
       }
       throw error;
     }
@@ -184,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     login,
     signup,
-    loginWithGoogle,
+    signInWithGoogle,
     resetPassword,
     logout,
   };
