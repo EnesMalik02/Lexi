@@ -11,7 +11,7 @@ export default function Auth() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const { login, signup, loginWithGoogle, resetPassword } = useAuth();
+  const { login, signup, signInWithGoogle, resetPassword } = useAuth();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,20 +32,6 @@ export default function Auth() {
     }
   }
 
-  async function handleGoogleLogin() {
-    setError('');
-    setSuccess('');
-    setLoading(true);
-
-    try {
-      await loginWithGoogle();
-    } catch (err: any) {
-      setError(err.message || 'Google ile giriş yapılamadı');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleForgotPassword(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -61,6 +47,20 @@ export default function Auth() {
       }, 3000);
     } catch (err: any) {
       setError(err.message || 'Şifre sıfırlama emaili gönderilemedi');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      setError(err.message || 'Google ile giriş yapılamadı');
     } finally {
       setLoading(false);
     }
@@ -252,45 +252,44 @@ export default function Auth() {
             >
               {loading ? 'Yükleniyor...' : isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
             </button>
-          </form>
-          )}
 
-          {!showForgotPassword && (
-            <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" style={{ borderColor: 'var(--border-light)' }}></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2" style={{ 
-                    backgroundColor: 'var(--bg-card)',
-                    color: 'var(--text-muted)'
-                  }}>
-                    veya
-                  </span>
-                </div>
+            {/* Ayırıcı */}
+            <div className="relative flex items-center justify-center my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t" style={{ borderColor: 'var(--border-light)' }}></div>
               </div>
+              <div className="relative px-4" style={{ 
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-muted)',
+                fontSize: '0.875rem'
+              }}>
+                veya
+              </div>
+            </div>
 
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full py-3 rounded-lg font-medium outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-light)',
-                  color: 'var(--text-primary)'
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17.64 9.20454C17.64 8.56636 17.5827 7.95272 17.4764 7.36363H9V10.845H13.8436C13.635 11.97 13.0009 12.9231 12.0477 13.5613V15.8195H14.9564C16.6582 14.2527 17.64 11.9454 17.64 9.20454Z" fill="#4285F4"/>
-                  <path d="M9 18C11.43 18 13.4673 17.1941 14.9564 15.8195L12.0477 13.5613C11.2418 14.1013 10.2109 14.4204 9 14.4204C6.65591 14.4204 4.67182 12.8372 3.96409 10.71H0.957275V13.0418C2.43818 15.9831 5.48182 18 9 18Z" fill="#34A853"/>
-                  <path d="M3.96409 10.71C3.78409 10.17 3.68182 9.59318 3.68182 9C3.68182 8.40682 3.78409 7.82999 3.96409 7.28999V4.95818H0.957275C0.347727 6.17318 0 7.54772 0 9C0 10.4523 0.347727 11.8268 0.957275 13.0418L3.96409 10.71Z" fill="#FBBC05"/>
-                  <path d="M9 3.57955C10.3214 3.57955 11.5077 4.03364 12.4405 4.92545L15.0218 2.34409C13.4632 0.891818 11.4259 0 9 0C5.48182 0 2.43818 2.01682 0.957275 4.95818L3.96409 7.29C4.67182 5.16273 6.65591 3.57955 9 3.57955Z" fill="#EA4335"/>
-                </svg>
-                {loading ? 'Yükleniyor...' : 'Google ile Devam Et'}
-              </button>
-            </>
+            {/* Google ile Giriş Butonu */}
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="w-full py-3 rounded-lg font-medium outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 hover:shadow-md"
+              style={{
+                backgroundColor: '#FFFFFF',
+                color: '#1F2937',
+                border: '1px solid #E5E7EB'
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" fillRule="evenodd">
+                  <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+                  <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                </g>
+              </svg>
+              <span>Google ile {isLogin ? 'Giriş Yap' : 'Kayıt Ol'}</span>
+            </button>
+          </form>
           )}
         </div>
       </div>
