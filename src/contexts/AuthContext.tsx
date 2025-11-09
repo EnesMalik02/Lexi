@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Önce email adresinin başka bir yöntemle kayıtlı olup olmadığını kontrol et
       const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      
+
       if (signInMethods.length > 0) {
         // Email zaten kayıtlı
         if (signInMethods.includes('google.com')) {
@@ -51,10 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error('Bu email adresi zaten kullanımda.');
         }
       }
-      
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
+
       // Kullanıcı bilgilerini Firestore'a kaydet
       await setDoc(doc(db, 'users', user.uid), {
         email: email,
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
+
       // Last login bilgisini güncelle
       await setDoc(
         doc(db, 'users', user.uid),
@@ -103,6 +103,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (error.code === 'auth/too-many-requests') {
         throw new Error('Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.');
       }
+      else if (error.code === 'auth/invalid-credential') {
+        throw new Error('Email veya şifre hatalı.');
+      }
+      else if (error.code === 'auth/user-not-found') {
+        throw new Error('Bu email adresi ile kayıtlı kullanıcı bulunamadı.');
+      }
+      else if (error.code === 'auth/wrong-password') {
+        throw new Error('Hatalı şifre.');
+      }
+      else if (error.code === 'auth/invalid-email') {
+        throw new Error('Geçersiz email adresi.');
+      }
+      else if (error.code === 'auth/user-disabled') {
+        throw new Error('Bu hesap devre dışı bırakılmış.');
+      }
       throw error;
     }
   }
@@ -115,26 +130,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         prompt: 'select_account',
         display: 'popup'
       });
-      
+
       const userCredential = await signInWithPopup(auth, provider);
       const user = userCredential.user;
-      
+
       if (!user.email) {
         await signOut(auth);
         throw new Error('Google hesabından email bilgisi alınamadı.');
       }
-      
+
       // Firestore'da bu email ile kayıtlı başka bir kullanıcı var mı kontrol et
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('email', '==', user.email));
       const querySnapshot = await getDocs(q);
-      
+
       if (!querySnapshot.empty) {
         // Bu email ile kayıtlı kullanıcı(lar) var
         const existingUserDoc = querySnapshot.docs[0];
         const existingUserData = existingUserDoc.data();
         const existingUserId = existingUserDoc.id;
-        
+
         // Eğer mevcut kullanıcı farklı bir UID'ye sahipse (farklı provider ile kayıt olmuş)
         if (existingUserId !== user.uid) {
           // Provider kontrolü
@@ -148,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       }
-      
+
       // Kullanıcı bilgilerini Firestore'a kaydet veya güncelle
       await setDoc(
         doc(db, 'users', user.uid),
@@ -171,6 +186,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Giriş işlemi iptal edildi.');
       } else if (error.code === 'auth/account-exists-with-different-credential') {
         throw new Error('Bu email adresi farklı bir giriş yöntemi ile zaten kayıtlı.');
+      }
+      else if (error.code === 'auth/user-disabled') {
+        throw new Error('Bu hesap devre dışı bırakılmış.');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Geçersiz email adresi.');
+      }
+      else if (error.code === 'auth/invalid-credential') {
+        throw new Error('Email veya şifre hatalı.');
       }
       throw error;
     }
