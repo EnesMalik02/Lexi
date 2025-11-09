@@ -67,6 +67,7 @@ export default function DeckDetail() {
           original: doc.data().original,
           translation: doc.data().translation,
           exampleSentence: doc.data().exampleSentence,
+          isKnown: doc.data().isKnown,
         });
       });
       
@@ -173,15 +174,27 @@ export default function DeckDetail() {
             </button>
           </div>
 
-          {/* Quiz Button */}
+          {/* Quiz Buttons */}
           {words.length > 0 && (
-            <button
-              onClick={() => router.push(`/quiz/${deckId}`)}
-              className="w-full mb-4 bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2 shadow-lg"
-            >
-              <PlayIcon className="w-5 h-5" />
-              Quiz Yap
-            </button>
+            <div className="space-y-3 mb-4">
+              <button
+                onClick={() => router.push(`/quiz/${deckId}`)}
+                className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2 shadow-lg"
+              >
+                <PlayIcon className="w-5 h-5" />
+                Tüm Kelimelerden Quiz Yap
+              </button>
+              
+              {words.filter(w => w.isKnown === false).length > 0 && (
+                <button
+                  onClick={() => router.push(`/quiz/${deckId}?wrongOnly=true`)}
+                  className="w-full bg-red-500 text-white py-3 rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <PlayIcon className="w-5 h-5" />
+                  Yanlış Bildiklerimden Quiz Yap ({words.filter(w => w.isKnown === false).length})
+                </button>
+              )}
+            </div>
           )}
 
           {/* Add Word Button */}

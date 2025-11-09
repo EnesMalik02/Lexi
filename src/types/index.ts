@@ -9,6 +9,7 @@ export interface Word {
   original: string;
   translation: string;
   exampleSentence?: string;
+  isKnown?: boolean; // Kullanıcının kelimeyi bilip bilmediğini takip eder
 }
 
 export interface QuizResult {

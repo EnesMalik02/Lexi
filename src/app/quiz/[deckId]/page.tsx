@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Word, Deck } from '@/types';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -14,8 +14,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function Quiz() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser } = useAuth();
   const deckId = params.deckId as string;
+  const wrongOnly = searchParams.get('wrongOnly') === 'true';
   
   const [deck, setDeck] = useState<Deck | null>(null);
   const [words, setWords] = useState<Word[]>([]);
@@ -69,11 +71,18 @@ export default function Quiz() {
           original: doc.data().original,
           translation: doc.data().translation,
           exampleSentence: doc.data().exampleSentence,
+          isKnown: doc.data().isKnown,
         });
       });
       
+      // Eğer wrongOnly true ise, sadece yanlış bilinen kelimeleri al
+      let filteredWords = wordsData;
+      if (wrongOnly) {
+        filteredWords = wordsData.filter((word) => word.isKnown === false);
+      }
+      
       // Kelimeleri karıştır
-      const shuffled = wordsData.sort(() => Math.random() - 0.5);
+      const shuffled = filteredWords.sort(() => Math.random() - 0.5);
       setWords(shuffled);
     } catch (error) {
       console.error('Kelime yükleme hatası:', error);
@@ -82,19 +91,43 @@ export default function Quiz() {
     }
   }
 
-  function handleKnown() {
+  async function handleKnown() {
     if (currentIndex >= words.length) return;
     
     const currentWord = words[currentIndex];
     setResults([...results, { wordId: currentWord.wordId, known: true }]);
+    
+    // Firebase'e kelimeyi "bilindi" olarak kaydet
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, `users/${currentUser.uid}/words/${currentWord.wordId}`), {
+          isKnown: true,
+        });
+      } catch (error) {
+        console.error('Kelime durumu güncellenirken hata:', error);
+      }
+    }
+    
     nextCard();
   }
 
-  function handleUnknown() {
+  async function handleUnknown() {
     if (currentIndex >= words.length) return;
     
     const currentWord = words[currentIndex];
     setResults([...results, { wordId: currentWord.wordId, known: false }]);
+    
+    // Firebase'e kelimeyi "bilinmedi" olarak kaydet
+    if (currentUser) {
+      try {
+        await updateDoc(doc(db, `users/${currentUser.uid}/words/${currentWord.wordId}`), {
+          isKnown: false,
+        });
+      } catch (error) {
+        console.error('Kelime durumu güncellenirken hata:', error);
+      }
+    }
+    
     nextCard();
   }
 
@@ -152,13 +185,35 @@ export default function Quiz() {
       <ProtectedRoute>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
           <div className="text-center">
-            <p className="text-gray-600 mb-4">Bu deck'te henüz kelime yok.</p>
-            <button
-              onClick={() => router.push(`/deck/${deckId}`)}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Kelime Ekle
-            </button>
+            {wrongOnly ? (
+              <>
+                <p className="text-gray-600 mb-4">🎉 Tebrikler! Yanlış bildiğiniz kelime kalmadı.</p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => router.push(`/quiz/${deckId}`)}
+                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    Tüm Kelimelerden Quiz Yap
+                  </button>
+                  <button
+                    onClick={() => router.push(`/deck/${deckId}`)}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Deck'e Dön
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-600 mb-4">Bu deck'te henüz kelime yok.</p>
+                <button
+                  onClick={() => router.push(`/deck/${deckId}`)}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Kelime Ekle
+                </button>
+              </>
+            )}
           </div>
         </div>
       </ProtectedRoute>
