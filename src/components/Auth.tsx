@@ -30,34 +30,43 @@ export default function Auth() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8" style={{ backgroundColor: 'var(--bg-main)' }}>
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Lexi</h1>
-          <p className="text-gray-600">Kelime Tekrar Uygulaması</p>
+          <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+            Lexi
+          </h1>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Kelime Tekrar Uygulaması
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+        <div className="rounded-2xl p-8" style={{ 
+          backgroundColor: 'var(--bg-card)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <div className="flex mb-6 rounded-lg p-1" style={{ backgroundColor: 'var(--btn-secondary-bg)' }}>
             <button
               type="button"
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                isLogin
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
+              style={{
+                backgroundColor: isLogin ? 'var(--bg-card)' : 'transparent',
+                color: isLogin ? 'var(--text-primary)' : 'var(--text-secondary)',
+                boxShadow: isLogin ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
             >
               Giriş Yap
             </button>
             <button
               type="button"
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                !isLogin
-                  ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
+              style={{
+                backgroundColor: !isLogin ? 'var(--bg-card)' : 'transparent',
+                color: !isLogin ? 'var(--text-primary)' : 'var(--text-secondary)',
+                boxShadow: !isLogin ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
             >
               Kayıt Ol
             </button>
@@ -65,13 +74,17 @@ export default function Auth() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              <div className="px-4 py-3 rounded-lg text-sm" style={{
+                backgroundColor: '#FEE2E2',
+                border: '1px solid #FCA5A5',
+                color: '#991B1B'
+              }}>
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                 E-posta
               </label>
               <input
@@ -80,13 +93,18 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-primary)'
+                }}
                 placeholder="ornek@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
                 Şifre
               </label>
               <input
@@ -95,7 +113,12 @@ export default function Auth() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-primary)'
+                }}
                 placeholder="••••••••"
                 minLength={6}
               />
@@ -104,7 +127,11 @@ export default function Auth() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full py-3 rounded-lg font-medium outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              style={{
+                backgroundColor: 'var(--btn-primary-bg)',
+                color: 'var(--btn-primary-text)'
+              }}
             >
               {loading ? 'Yükleniyor...' : isLogin ? 'Giriş Yap' : 'Kayıt Ol'}
             </button>

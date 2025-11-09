@@ -97,17 +97,26 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 pb-20">
+      <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--bg-main)' }}>
         <div className="max-w-2xl mx-auto px-4 py-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Lexi</h1>
-              <p className="text-gray-600 text-sm mt-1">Kelime Tekrar Uygulaması</p>
+              <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                Lexi
+              </h1>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                Kelime Tekrar Uygulaması
+              </p>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-sm text-gray-700 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm rounded-lg transition-all"
+              style={{ 
+                backgroundColor: 'var(--btn-secondary-bg)',
+                color: 'var(--btn-secondary-text)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}
             >
               Çıkış
             </button>
@@ -116,7 +125,12 @@ export default function Dashboard() {
           {/* Add Deck Button */}
           <button
             onClick={() => setShowAddDeck(!showAddDeck)}
-            className="w-full mb-4 bg-indigo-600 text-white py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-lg"
+            className="w-full mb-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+            style={{ 
+              backgroundColor: showAddDeck ? 'var(--btn-secondary-bg)' : 'var(--btn-primary-bg)', 
+              color: showAddDeck ? 'var(--btn-secondary-text)' : 'var(--btn-primary-text)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
           >
             <PlusIcon className="w-5 h-5" />
             Yeni Deck Ekle
@@ -124,33 +138,49 @@ export default function Dashboard() {
 
           {/* Add Deck Form */}
           {showAddDeck && (
-            <div className="bg-white rounded-xl shadow-lg p-4 mb-6">
-              <form onSubmit={handleAddDeck} className="space-y-3">
+            <div className="rounded-xl p-6 mb-6" style={{ 
+              backgroundColor: 'var(--bg-card)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              <form onSubmit={handleAddDeck} className="space-y-4">
                 <input
                   type="text"
                   value={newDeckName}
                   onChange={(e) => setNewDeckName(e.target.value)}
                   placeholder="Deck adı girin..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 rounded-lg outline-none transition-all"
+                  style={{ 
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-primary)'
+                  }}
                   required
                   autoFocus
                 />
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-                  >
-                    Ekle
-                  </button>
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       setShowAddDeck(false);
                       setNewDeckName('');
                     }}
-                    className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                    className="flex-1 py-3 rounded-lg font-medium transition-all"
+                    style={{ 
+                      backgroundColor: 'var(--btn-secondary-bg)', 
+                      color: 'var(--btn-secondary-text)'
+                    }}
                   >
                     İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 rounded-lg font-medium transition-all"
+                    style={{ 
+                      backgroundColor: 'var(--btn-primary-bg)', 
+                      color: 'var(--btn-primary-text)'
+                    }}
+                  >
+                    Ekle
                   </button>
                 </div>
               </form>
@@ -159,11 +189,17 @@ export default function Dashboard() {
 
           {/* Decks List */}
           {loading ? (
-            <div className="text-center py-12 text-gray-600">Yükleniyor...</div>
+            <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>
+              Yükleniyor...
+            </div>
           ) : decks.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 mb-4">Henüz deck oluşturmadınız.</p>
-              <p className="text-sm text-gray-500">Yukarıdaki butona tıklayarak yeni bir deck oluşturabilirsiniz.</p>
+              <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+                Henüz deck oluşturmadınız.
+              </p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Yukarıdaki butona tıklayarak yeni bir deck oluşturabilirsiniz.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -171,10 +207,18 @@ export default function Dashboard() {
                 <div
                   key={deck.deckId}
                   onClick={() => router.push(`/deck/${deck.deckId}`)}
-                  className="bg-white rounded-xl shadow-lg p-5 hover:shadow-xl transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                  className="rounded-xl p-5 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                  style={{ 
+                    backgroundColor: 'var(--bg-card)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}
                 >
-                  <h3 className="text-xl font-semibold text-gray-900">{deck.deckName}</h3>
-                  <p className="text-sm text-gray-500 mt-1">Kelimeleri görüntülemek için tıklayın →</p>
+                  <h3 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {deck.deckName}
+                  </h3>
+                  <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                    Kelimeleri görüntülemek için tıklayın →
+                  </p>
                 </div>
               ))}
             </div>
