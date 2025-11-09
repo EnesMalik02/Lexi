@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ConfirmationModal from '@/components/ConfirmationModal';
@@ -38,7 +38,7 @@ export default function DeckDetail() {
   // === ARAMA state'leri ===
   const [filteredWordIds, setFilteredWordIds] = useState<string[] | null>(null);
   const [searchQ, setSearchQ] = useState('');
-  const [highlightId, setHighlightId] = useState<string | null>(null); // seçilen kartı kısa süre vurgula
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   useEffect(() => {
     if (currentUser && deckId) {
@@ -57,8 +57,26 @@ export default function DeckDetail() {
     id: w.wordId,
     title: `${w.original} — ${w.translation}`,
     text: `${w.original} ${w.translation} ${w.exampleSentence ?? ''}`,
-    href: `#word-${w.wordId}`, // scroll için anchor
+    href: `#word-${w.wordId}`,
   }));
+
+  // === CALLBACK'LERİ SABİTLE ===
+  const handleResults = useCallback((results: Array<{ item: SearchItem }>) => {
+    if (!searchQ.trim()) {
+      setFilteredWordIds(null);
+    } else {
+      setFilteredWordIds(results.map((r) => r.item.id));
+    }
+  }, [searchQ]);
+
+  const handleSelect = useCallback((it: SearchItem) => {
+    const el = document.getElementById(`word-${it.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightId(it.id);
+      setTimeout(() => setHighlightId(null), 1300);
+    }
+  }, []);
 
   async function loadDeck() {
     if (!currentUser || !deckId) return;
@@ -206,7 +224,7 @@ export default function DeckDetail() {
   }
 
   // Görünen (filtre uygulanmış) liste
-  const visibleWords = filteredWordIds ? words.filter(w => filteredWordIds.includes(w.wordId)) : words;
+  const visibleWords = filteredWordIds ? words.filter((w) => filteredWordIds.includes(w.wordId)) : words;
 
   return (
     <ProtectedRoute>
@@ -243,25 +261,11 @@ export default function DeckDetail() {
           <div className="mb-4">
             <QuickSearch
               items={wordItems}
-              boldOnly={false} // tüm metinde ara
+              boldOnly={false}
               placeholder="Bu deck'te kelime ara… (Ctrl/⌘+K)"
-              onQueryChange={(q) => setSearchQ(q)}
-              onResultsChange={(results) => {
-                if (!searchQ.trim()) {
-                  setFilteredWordIds(null);
-                } else {
-                  setFilteredWordIds(results.map(r => r.item.id));
-                }
-              }}
-              onSelect={(it) => {
-                // anchor'a kaydır + kısa süre vurgula
-                const el = document.getElementById(`word-${it.id}`);
-                if (el) {
-                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  setHighlightId(it.id);
-                  setTimeout(() => setHighlightId(null), 1300);
-                }
-              }}
+              onQueryChange={setSearchQ}
+              onResultsChange={handleResults}
+              onSelect={handleSelect}
             />
           </div>
 

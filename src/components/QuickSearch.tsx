@@ -28,6 +28,8 @@ export default function QuickSearch({
   const [q, setQ] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const lastKey = React.useRef<string>("");
+
 
   // Ctrl/⌘ + K ile fokus / ESC ile kapat
   React.useEffect(() => {
@@ -87,9 +89,14 @@ export default function QuickSearch({
   }, [items, debouncedQ, boldOnly, limit]);
 
   // parent'ı bilgilendir
-  React.useEffect(() => {
+
+React.useEffect(() => {
+  const key = results.map(r => r.item.id).join("|"); // sonuç imzası
+  if (key !== lastKey.current) {
     onResultsChange?.(results);
-  }, [results, onResultsChange]);
+    lastKey.current = key;
+  }
+}, [results]);
 
   const handlePick = (it: SearchItem) => {
     onSelect?.(it);
