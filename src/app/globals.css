@@ -18,11 +18,15 @@
   
   /* Kenarlık ve Ayırıcı Renkleri */
   --border-light: #E0E0E0;
+  --border-gray:#373737;
   --icon-gray: #757575;
   
   /* Legacy support */
   --background: var(--bg-main);
   --foreground: var(--text-primary);
+
+   --overlay: rgba(21, 19, 19, 0.55); 
+
 }
 
 @theme inline {
@@ -37,3 +41,5 @@ body {
   color: var(--text-primary);
   font-family: 'Work Sans', sans-serif;
 }
+
+

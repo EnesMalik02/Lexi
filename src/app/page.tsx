@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Auth from '@/components/Auth';
+import { deleteDoc, doc, collection, getDocs, query, where, Firestore } from "firebase/firestore";
 
 export default function Home() {
   const { currentUser, loading } = useAuth();
