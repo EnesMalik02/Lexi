@@ -11,8 +11,8 @@ import { ArrowLeftIcon, PlusIcon, TrashIcon, PlayIcon } from '@heroicons/react/2
 import { useAuth } from '@/contexts/AuthContext';
 
 // === ARAMA: importlar ===
-import QuickSearch from '@/components/QuickSearch';
-import type { SearchItem } from '@/components/search-types';
+import QuickSearch from '@/components/QuickSearch/QuickSearch';
+import type { SearchItem } from '@/components/QuickSearch/search-types';
 
 export default function DeckDetail() {
   const params = useParams();

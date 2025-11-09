@@ -8,8 +8,8 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from 'fireb
 import { db } from '@/lib/firebase';
 import { Deck } from '@/types';
 import { PlusIcon } from '@heroicons/react/24/outline';
-import QuickSearch from "@/components/QuickSearch";
-import type { SearchItem } from "@/components/search-types";
+import QuickSearch from "@/components/QuickSearch/QuickSearch";
+import type { SearchItem } from "@/components/QuickSearch/search-types";
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
