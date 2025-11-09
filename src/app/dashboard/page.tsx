@@ -8,6 +8,8 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc } from 'fireb
 import { db } from '@/lib/firebase';
 import { Deck } from '@/types';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import QuickSearch from "@/components/QuickSearch";
+import type { SearchItem } from "@/components/search-types";
 
 export default function Dashboard() {
   const { currentUser, logout } = useAuth();
@@ -17,27 +19,39 @@ export default function Dashboard() {
   const [showAddDeck, setShowAddDeck] = useState(false);
   const [newDeckName, setNewDeckName] = useState('');
 
+  // ——— ARAMA STATE'leri ———
+  const [filteredDeckIds, setFilteredDeckIds] = useState<string[] | null>(null);
+  const [searchQ, setSearchQ] = useState('');
+
+  // decks -> SearchItem[]
+  const deckItems: SearchItem[] = decks.map((d) => ({
+    id: d.deckId,
+    title: d.deckName,
+    text: d.deckName,
+    href: `/deck/${d.deckId}`,
+  }));
+
+  // arama temizse tümünü göster
   useEffect(() => {
-    if (currentUser) {
-      loadDecks();
-    }
+    if (!searchQ.trim()) setFilteredDeckIds(null);
+  }, [decks, searchQ]);
+
+  useEffect(() => {
+    if (currentUser) loadDecks();
   }, [currentUser]);
 
   async function loadDecks() {
     if (!currentUser) return;
-    
     try {
       const decksRef = collection(db, `users/${currentUser.uid}/decks`);
       const querySnapshot = await getDocs(decksRef);
       const decksData: Deck[] = [];
-      
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach((docu) => {
         decksData.push({
-          deckId: doc.id,
-          deckName: doc.data().deckName,
+          deckId: docu.id,
+          deckName: docu.data().deckName,
         });
       });
-      
       setDecks(decksData);
     } catch (error) {
       console.error('Deck yükleme hatası:', error);
@@ -49,13 +63,9 @@ export default function Dashboard() {
   async function handleAddDeck(e: React.FormEvent) {
     e.preventDefault();
     if (!currentUser || !newDeckName.trim()) return;
-
     try {
       const decksRef = collection(db, `users/${currentUser.uid}/decks`);
-      await addDoc(decksRef, {
-        deckName: newDeckName.trim(),
-      });
-      
+      await addDoc(decksRef, { deckName: newDeckName.trim() });
       setNewDeckName('');
       setShowAddDeck(false);
       loadDecks();
@@ -70,19 +80,16 @@ export default function Dashboard() {
     if (!confirm('Bu deck\'i silmek istediğinize emin misiniz? Tüm kelimeler de silinecektir.')) return;
 
     try {
-      // Deck'i sil
       await deleteDoc(doc(db, `users/${currentUser.uid}/decks/${deckId}`));
-      
-      // Deck'e ait kelimeleri de sil
+
       const wordsRef = collection(db, `users/${currentUser.uid}/words`);
       const wordsQuery = query(wordsRef, where('deckId', '==', deckId));
       const wordsSnapshot = await getDocs(wordsQuery);
-      
       const deletePromises = wordsSnapshot.docs.map((wordDoc) =>
         deleteDoc(doc(db, `users/${currentUser.uid}/words/${wordDoc.id}`))
       );
       await Promise.all(deletePromises);
-      
+
       loadDecks();
     } catch (error) {
       console.error('Deck silme hatası:', error);
@@ -94,6 +101,11 @@ export default function Dashboard() {
     logout();
     router.push('/');
   }
+
+  // filtrelenmiş dizi
+  const visibleDecks = filteredDeckIds
+    ? decks.filter(d => filteredDeckIds.includes(d.deckId))
+    : decks;
 
   return (
     <ProtectedRoute>
@@ -112,7 +124,7 @@ export default function Dashboard() {
             <button
               onClick={handleLogout}
               className="px-4 py-2 text-sm rounded-lg transition-all"
-              style={{ 
+              style={{
                 backgroundColor: 'var(--btn-secondary-bg)',
                 color: 'var(--btn-secondary-text)',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
@@ -122,12 +134,30 @@ export default function Dashboard() {
             </button>
           </div>
 
+          {/* ——— ARAMA KUTUSU ——— */}
+          <div className="mb-4">
+            <QuickSearch
+              items={deckItems}
+              boldOnly={false}                // deck adları düz metin; hepsinde ara
+              placeholder="Deck ara… (Ctrl/⌘+K)"
+              onSelect={(it) => router.push(it.href!)}
+              onQueryChange={(q) => setSearchQ(q)}
+              onResultsChange={(results) => {
+                if (!searchQ.trim()) {
+                  setFilteredDeckIds(null);
+                } else {
+                  setFilteredDeckIds(results.map(r => r.item.id));
+                }
+              }}
+            />
+          </div>
+
           {/* Add Deck Button */}
           <button
             onClick={() => setShowAddDeck(!showAddDeck)}
             className="w-full mb-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
-            style={{ 
-              backgroundColor: showAddDeck ? 'var(--btn-secondary-bg)' : 'var(--btn-primary-bg)', 
+            style={{
+              backgroundColor: showAddDeck ? 'var(--btn-secondary-bg)' : 'var(--btn-primary-bg)',
               color: showAddDeck ? 'var(--btn-secondary-text)' : 'var(--btn-primary-text)',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}
@@ -138,7 +168,7 @@ export default function Dashboard() {
 
           {/* Add Deck Form */}
           {showAddDeck && (
-            <div className="rounded-xl p-6 mb-6" style={{ 
+            <div className="rounded-xl p-6 mb-6" style={{
               backgroundColor: 'var(--bg-card)',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
@@ -149,7 +179,7 @@ export default function Dashboard() {
                   onChange={(e) => setNewDeckName(e.target.value)}
                   placeholder="Deck adı girin..."
                   className="w-full px-4 py-3 rounded-lg outline-none transition-all"
-                  style={{ 
+                  style={{
                     backgroundColor: 'var(--bg-card)',
                     border: '1px solid var(--border-light)',
                     color: 'var(--text-primary)'
@@ -160,25 +190,16 @@ export default function Dashboard() {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowAddDeck(false);
-                      setNewDeckName('');
-                    }}
+                    onClick={() => { setShowAddDeck(false); setNewDeckName(''); }}
                     className="flex-1 py-3 rounded-lg font-medium transition-all"
-                    style={{ 
-                      backgroundColor: 'var(--btn-secondary-bg)', 
-                      color: 'var(--btn-secondary-text)'
-                    }}
+                    style={{ backgroundColor: 'var(--btn-secondary-bg)', color: 'var(--btn-secondary-text)' }}
                   >
                     İptal
                   </button>
                   <button
                     type="submit"
                     className="flex-1 py-3 rounded-lg font-medium transition-all"
-                    style={{ 
-                      backgroundColor: 'var(--btn-primary-bg)', 
-                      color: 'var(--btn-primary-text)'
-                    }}
+                    style={{ backgroundColor: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)' }}
                   >
                     Ekle
                   </button>
@@ -201,24 +222,39 @@ export default function Dashboard() {
                 Yukarıdaki butona tıklayarak yeni bir deck oluşturabilirsiniz.
               </p>
             </div>
+          ) : (visibleDecks.length === 0 && searchQ.trim()) ? (
+            <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>
+              Sonuç bulunamadı.
+            </div>
           ) : (
             <div className="space-y-3">
-              {decks.map((deck) => (
+              {visibleDecks.map((deck) => (
                 <div
                   key={deck.deckId}
                   onClick={() => router.push(`/deck/${deck.deckId}`)}
                   className="rounded-xl p-5 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
-                  style={{ 
+                  style={{
                     backgroundColor: 'var(--bg-card)',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                   }}
                 >
-                  <h3 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {deck.deckName}
-                  </h3>
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                    Kelimeleri görüntülemek için tıklayın →
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {deck.deckName}
+                      </h3>
+                      <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                        Kelimeleri görüntülemek için tıklayın →
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteDeck(deck.deckId); }}
+                      className="text-xs px-3 py-2 rounded-md"
+                      style={{ background: 'var(--btn-secondary-bg)', color: 'var(--btn-secondary-text)' }}
+                    >
+                      Sil
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -228,4 +264,3 @@ export default function Dashboard() {
     </ProtectedRoute>
   );
 }
-
